@@ -259,8 +259,13 @@ class AbstractMongoSet(collections.Iterable):
         self._local_iter = None
 
     def __iter__(self):
-        self._read_records()
-        return iter(self.records)
+        if self.records is None:
+            for rec in self.raw_records.clone():  # Moving the cursor would make random access impossible
+                yield self.recordClass(attrs=rec)
+        else:
+            # if data has been saved already, no reason to look it up in mongo
+            for rec in self.records:
+                yield rec
 
     def __getitem__(self, item):
         self._read_records()
